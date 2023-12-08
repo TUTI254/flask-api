@@ -1,41 +1,17 @@
-import os 
-from dotenv import load_dotenv
-from flask import Flask, request, jsonify , make_response
-from flask_sqlalchemy import SQLAlchemy
+from flask import Blueprint, request, jsonify , make_response
+from model.users.models import db, User
 
+user_controller = Blueprint('user_controller', __name__)
 
-load_dotenv()
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL')
-db = SQLAlchemy(app)
-
-# create a table called users 
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True , nullable=False)
-    age = db.Column(db.Integer, unique=False, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-
-    def json(self):
-        return {'id': self.id, 'name': self.name, 'age': self.age, 'email': self.email}
-
-with app.app_context():
-    db.create_all()
-    
-
-@app.route('/', methods=['GET'])
+@user_controller.route('/', methods=['GET'])
 def home():
     return "Welcome to my flask rest api project"
 
-@app.route('/test', methods=['GET'])
+@user_controller.route('/test', methods=['GET'])
 def test():
     return make_response( jsonify({'message': 'This is a test route'}),200)
 
-
-
-@app.route('/users', methods=['POST'])
+@user_controller.route('/users', methods=['POST'])
 def create_user():
     try:
         data = request.get_json()
@@ -46,7 +22,7 @@ def create_user():
     except Exception as e:
         return make_response(jsonify({'message': 'Error creating user', 'error': str(e)}), 500)
 
-@app.route('/users', methods=['GET'])
+@user_controller.route('/users', methods=['GET'])
 def get_users():
     try:
         users = User.query.all()
@@ -54,11 +30,7 @@ def get_users():
     except Exception as e:
         return make_response(jsonify({'message': 'Error getting users', 'error': str(e)}), 500)
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
-# create a route called /users/<id> to get a specific user in the database
-@app.route('/users/<int:id>', methods=['GET'])
+@user_controller.route('/users/<int:id>', methods=['GET'])
 def get_user(id):
     try:
         user = User.query.filter_by(id=id).first() # get the user with the specified id
@@ -69,8 +41,7 @@ def get_user(id):
     except Exception as e:
         return make_response(jsonify({'message': 'Error getting user'}), 500)
 
-# create a route called /users/<id> to update a specific user in the database
-@app.route('/users/<int:id>', methods=['PATCH'])
+@user_controller.route('/users/<int:id>', methods=['PATCH'])
 def update_user(id):
     try:
         user = User.query.filter_by(id=id).first() # get the user with the specified id
@@ -87,8 +58,7 @@ def update_user(id):
     except Exception as e:
         return make_response(jsonify({'message': 'Error updating user'}), 500)
 
-# create a route called /users/<id> to delete a specific user in the database
-@app.route('/users/<int:id>', methods=['DELETE'])
+@user_controller.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
     try:
         user = User.query.filter_by(id=id).first() # get the user with the specified id
@@ -100,6 +70,3 @@ def delete_user(id):
             return make_response(jsonify({'message': 'User not found'}), 404)
     except Exception as e:
         return make_response(jsonify({'message': 'Error deleting user'}), 500)
-    
-    
-
